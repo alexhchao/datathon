@@ -18,7 +18,7 @@ print('hello')
 
 os.getcwd()
 
-raw_data = pd.read_csv('db_data.csv')
+raw_data = pd.read_csv('stock_data.csv')
 
 raw_data.describe()
 
@@ -52,7 +52,7 @@ X_raw = raw_data.loc[:, list(factor_mapping.keys()) + ['fwd_returns']].copy()
 
 X_raw.rename(columns = factor_mapping, inplace = True)
 
-X_raw
+X_raw.reset_index().groupby('date').count()
 
 
 fwd_returns = raw_data.fwd_returns * 0.01
