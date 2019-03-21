@@ -21,7 +21,7 @@ import statsmodels.api as sm
 import statsmodels.formula.api as smf
 from statsmodels.regression.linear_model import OLS
 from statsmodels.tools.tools import add_constant
-
+from scipy.stats import zscore
 
 def ols_get_coefs(X, y, w=None):
     """
@@ -43,7 +43,7 @@ def ols_get_coefs(X, y, w=None):
 
 
 # calc VIF
-def variance_inflation_factors(exog_df):
+def variance_inflation_factors(exog_df, add_const = True):
     '''
     credit to : https://stackoverflow.com/questions/42658379/variance-inflation-factor-in-python
 
@@ -58,7 +58,8 @@ def variance_inflation_factors(exog_df):
     vif : Series
         variance inflation factors
     '''
-    exog_df = sm.add_constant(exog_df)
+    if add_const:
+        exog_df = sm.add_constant(exog_df)
     vifs = pd.Series(
         [1 / (1. - sm.OLS(exog_df[col].values,
                           exog_df.loc[:, exog_df.columns != col].values).fit().rsquared)
@@ -175,32 +176,6 @@ def plot_fitted_vs_resids(model):
     ax = sns.regplot(x=model.fittedvalues, y=model.resid, lowess=True)
     ax.set(xlabel='Fitted values', ylabel='Residuals')
     plt.show()
-
-
-def variance_inflation_factors(exog_df):
-    '''
-    https://stackoverflow.com/questions/42658379/variance-inflation-factor-in-python
-
-    Parameters
-    ----------
-    exog_df : dataframe, (nobs, k_vars)
-        design matrix with all explanatory variables, as for example used in
-        regression.
-
-    Returns
-    -------
-    vif : Series
-        variance inflation factors
-    '''
-    exog_df = add_constant(exog_df)
-    vifs = pd.Series(
-        [1 / (1. - OLS(exog_df[col].values,
-                       exog_df.loc[:, exog_df.columns != col].values).fit().rsquared)
-         for col in exog_df],
-        index=exog_df.columns,
-        name='VIF'
-    )
-    return vifs
 
 
 def mse(model):

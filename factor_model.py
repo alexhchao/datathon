@@ -24,8 +24,9 @@ raw_data.describe()
 
 raw_data.date.unique
 
-pd.options.display.max_rows = 15
-pd.options.display.max_columns = 15
+pd.options.display.max_rows = 10
+pd.options.display.max_columns = 20
+pd.set_option('display.width', 100)
 
 raw_data
 
@@ -59,6 +60,10 @@ fwd_returns = raw_data.fwd_returns * 0.01
 returns = raw_data.fwd_returns.groupby('stock').shift(1) * 0.01
 
 X_raw['returns'] = X_raw.fwd_returns.groupby('stock').shift(1)
+
+X_raw.head()
+
+X_raw.reset_index().to_csv('stock_data_renamed.csv')
 
 returns.unstack().T
 
