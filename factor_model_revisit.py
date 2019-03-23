@@ -3,7 +3,7 @@
 from scipy.stats import mstats
 
 from ols_functions import (replace_with_dummies, zscore_but_ignore_binary_cols, \
-    variance_inflation_factors)
+    variance_inflation_factors, normalize)
 
 
 X_raw = pd.read_csv('stock_data_renamed.csv')
@@ -29,7 +29,86 @@ cols_for_X = [x for x in X_with_dummies.columns if x not in ['returns','fwd_retu
 
 X = X_with_dummies.loc[:,cols_for_X ]
 
+
 ###############
+# factor model object
+##################
+dts = pd.date_range(start='2005-12-31', end='2015-12-31', freq = 'BM')
+
+X_raw = X_raw.reset_index()
+
+{'D' + }
+
+nums = [x for x in np.arange(0,120)]
+
+dummy_dates = 'D'+pd.Series(nums ).astype(str).str.zfill(3)
+
+date_mapper = pd.concat([dummy_dates, pd.Series(dts)],axis=1)
+date_mapper.columns = ['dummy_date','date']
+
+#date_mapper.date
+
+X_new_dts = pd.merge(X_raw,
+         date_mapper, left_on = 'date', right_on = 'dummy_date', how = 'left')
+X_new_dts = X_new_dts.drop('date_x',axis=1).rename(columns = {'date_y':'date'})
+
+X_new_dts.to_csv('stock_data_actual_dates.csv')
+
+X_m = np.array(X)
+
+            #import pdb; pdb.set_trace()
+
+    #############
+X_new_dts['size'] = np.log(X_new_dts['mktcap'])
+
+model = factor_risk_model(X_new_dts)
+model.calc_factor_ports_and_returns(list_dates=['2006-01-31','2006-02-28'],
+    list_factors=['sector', 'momentum','quality','growth','vol','value','size'])
+
+model.calc_factor_ports_and_returns(list_factors=['sector', 'momentum','quality','growth','vol','value','size'])
+# doesnt work on 10-29-2010
+# need to figure out hwy
+
+X_new_dts.to_csv("")
+
+
+
+X_new_dts[X_new_dts.date=='2010-10-29']
+
+model.factor_returns
+
+model.factor_portfolios.groupby(['date','factor']).sum().plot(kind='bar')
+
+
+####################
+X_new_dts.groupby('date').fwd_returns.count()
+
+
+_df = X_new_dts[X_new_dts.date == '2006-01-31']
+
+_df = _df.set_index('stock').loc[:,list_factors + ['fwd_returns']+['mktcap']]
+
+_df = _df[_df.mktcap.notnull()]
+
+_df = pd.get_dummies(_df,columns = ['sector'])
+
+_df
+
+col = _df.mktcap
+
+col.unique()
+
+set(_df['sector_4.0'].unique())=={0,1}
+
+[is_binary(_df[x]) for x in _df.columns]
+
+
+
+
+
+
+
+        ###############
 # Create FMPs
 ##################
 dt = 'D001'
@@ -107,6 +186,32 @@ _x.shape
 # factor portfolios are dollar-neutral, but sector potfolios sum up to 1
 # with weights being equal wt or porportional to risk
 
+
+####################################
+
+test_df = df.iloc[:10,:]
+
+mom_normal = normalize(test_df.momentum )
+
+rnks = test_df.momentum.rank()/(1+max(test_df.momentum.rank()))
+
+norm.ppf(rnks )
+
+norm.ppf([0.01,0.05, 0.50,0.95,.99])
+
+##################################
+
+
+def random_df():
+    """
+    
+    Returns
+    -------
+
+    """
+
+
+####################################
 
 
 def variance_inflation_factors_2(exog_df, add_const = True):

@@ -22,6 +22,100 @@ import statsmodels.formula.api as smf
 from statsmodels.regression.linear_model import OLS
 from statsmodels.tools.tools import add_constant
 from scipy.stats import zscore
+from scipy.stats import norm
+
+
+def check_if_matrix_has_nans(m):
+    return np.any(np.isnan(m ))
+
+
+def normalize(x):
+    """
+    percentile rank than inverse normal dist
+    
+    Parameters
+    ----------
+    x
+
+    Returns
+    -------
+
+    """
+    ranks = x.rank()
+    _x = ranks/(1+max(ranks))
+    return pd.Series(norm.ppf(_x))
+
+
+def zscore_but_ignore_binary_cols(df,
+                                  func_to_apply=normalize):
+    """
+
+
+    Parameters
+    ----------
+    df
+
+    Returns
+    -------
+
+    """
+    _df = df.copy()
+
+    numeric_cols = _df.columns[[is_not_binary(_df[x]) for x in _df.columns]]
+    binary_cols = _df.columns[[is_binary(_df[x]) for x in _df.columns]]
+
+    _df_numeric = _df.loc[:, numeric_cols]
+    _df_binary = _df.loc[:, binary_cols]
+
+    _df_z = _df_numeric.apply(func_to_apply, axis=0).replace(np.NaN, 0.00)
+    _df_z.columns = _df_numeric.columns
+    _df_z.index = _df_binary.index
+    print(_df_z.describe())
+
+    out = pd.concat([_df_z, _df_binary], axis=1)
+
+    if out.shape != _df.shape:
+        print(" shapes not correct! something is wrong")
+        import pdb; pdb.set_trace()
+
+    return out
+
+
+def is_binary(col):
+    """
+
+
+    Parameters
+    ----------
+    col
+
+    Returns
+    -------
+
+    """
+    if not isinstance(col, pd.Series):
+        raise ValueError("column is not a series! please try again")
+
+    return set(col.unique()) == {0, 1}
+
+
+def is_not_binary(col):
+    """
+
+
+    Parameters
+    ----------
+    col
+
+    Returns
+    -------
+
+    """
+    if not isinstance(col, pd.Series):
+        raise ValueError("column is not a series! please try again")
+
+    return not set(col.unique()) == {0, 1}
+
 
 def ols_get_coefs(X, y, w=None):
     """
