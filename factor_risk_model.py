@@ -1,3 +1,7 @@
+#from ols_functions import (zscore_but_ignore_binary_cols,
+#                           normalize, check_if_matrix_has_nans,
+#                           is_binary, is_not_binary)
+
 class factor_risk_model(object):
     """
     factor risk model
@@ -10,18 +14,19 @@ class factor_risk_model(object):
                  fwd_ret_col='fwd_returns',
                  stock_col='stock',
                  date_col='date'):
-        self.df = df
+
         self.sector_col = sector_col
         self.mktcap_col = mktcap_col
         self.fwd_ret_col = fwd_ret_col
         self.stock_col = stock_col
         self.date_col = date_col
+        self.df = smart_set_index(df, index = [date_col, stock_col])
         self.factor_portfolios = None
         self.factor_returns = None
 
     @property
     def dates(self):
-        return list(self.df[self.date_col].unique())
+        return list(self.df.index.get_level_values(self.date_col).unique())
 
     def calc_factor_ports_and_returns(self,
                                       list_dates=None,
@@ -57,11 +62,18 @@ class factor_risk_model(object):
 
         for dt in list_dates:
             print(dt)
-            _df = _df_all[_df_all[self.date_col] == dt]
 
-            _df = _df.loc[:, list_factors + [self.stock_col] + [self.mktcap_col] + [self.fwd_ret_col]]
+            #import pdb; pdb.set_trace()
 
-            _df = _df.set_index(self.stock_col)
+            #_df = _df_all[_df_all[self.date_col] == dt]
+            _df = _df_all[_df_all.index.get_level_values(
+                self.date_col) == dt].reset_index(level=0)
+
+
+            #_df = _df.loc[:, list_factors + [self.stock_col] + [self.mktcap_col] + [self.fwd_ret_col]]
+            _df = _df.loc[:, list_factors + [self.mktcap_col] + [self.fwd_ret_col]]
+
+            #_df = _df.set_index(self.stock_col)
             # get returns vector
             r_df = _df.loc[:, [self.fwd_ret_col]] * 0.01
 
@@ -88,14 +100,25 @@ class factor_risk_model(object):
             all_factor_names = list(_df.columns)
 
             X = zscore_but_ignore_binary_cols(_df)
+            #import pdb; pdb.set_trace()
+
+            if any([x for x in X.count(axis=0).values if x == 0]):
+                print('ERROR! one or more factors are all NA')
+                import pdb;pdb.set_trace()
+
             X = np.array(X)
 
-            if check_if_matrix_has_nans(X):
-                raise ValueError("X has NA values!")
-            if check_if_matrix_has_nans(R):
-                raise ValueError("R has NA values!")
-            if check_if_matrix_has_nans(W):
-                raise ValueError("W has NA values!")
+            try:
+                if check_if_matrix_has_nans(X):
+                    raise ValueError("X has NA values!")
+                if check_if_matrix_has_nans(R):
+                    raise ValueError("R has NA values!")
+                if check_if_matrix_has_nans(W):
+                    raise ValueError("W has NA values!")
+            except Exception as e:
+                print(e)
+                import pdb; pdb.set_trace()
+
 
             f_df, rets_df = self.get_factor_ports_and_returns(X, W, R,
                                                               all_factor_names=all_factor_names,
@@ -155,3 +178,25 @@ class factor_risk_model(object):
             return f_df, rets_df
         else:
             return f_df, rets_df
+
+    def factor_portfolio_stats(self):
+        if self.factor_portfolios is not None:
+            return self.factor_portfolios.groupby(
+            [self.date_col,'factor']).weight.sum().unstack().describe()
+        else:
+            return None
+
+    def factor_wealth(self):
+        if self.factor_returns is not None:
+            return np.cumprod(1+self.factor_returns)
+        else:
+            return None
+
+    def __repr__(self):
+        print("""
+        risk_model_factor object
+        ------------------------
+        {}
+        
+        """.format(self.df))
+

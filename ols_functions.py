@@ -42,43 +42,8 @@ def normalize(x):
 
     """
     ranks = x.rank()
-    _x = ranks/(1+max(ranks))
+    _x = ranks/(1+max(ranks.dropna())) # na messes things up
     return pd.Series(norm.ppf(_x))
-
-
-def zscore_but_ignore_binary_cols(df,
-                                  func_to_apply=normalize):
-    """
-
-
-    Parameters
-    ----------
-    df
-
-    Returns
-    -------
-
-    """
-    _df = df.copy()
-
-    numeric_cols = _df.columns[[is_not_binary(_df[x]) for x in _df.columns]]
-    binary_cols = _df.columns[[is_binary(_df[x]) for x in _df.columns]]
-
-    _df_numeric = _df.loc[:, numeric_cols]
-    _df_binary = _df.loc[:, binary_cols]
-
-    _df_z = _df_numeric.apply(func_to_apply, axis=0).replace(np.NaN, 0.00)
-    _df_z.columns = _df_numeric.columns
-    _df_z.index = _df_binary.index
-    print(_df_z.describe())
-
-    out = pd.concat([_df_z, _df_binary], axis=1)
-
-    if out.shape != _df.shape:
-        print(" shapes not correct! something is wrong")
-        import pdb; pdb.set_trace()
-
-    return out
 
 
 def is_binary(col):
@@ -115,6 +80,56 @@ def is_not_binary(col):
         raise ValueError("column is not a series! please try again")
 
     return not set(col.unique()) == {0, 1}
+
+def zscore_but_ignore_binary_cols(df,
+                                  func_to_apply=normalize):
+    """
+
+
+    Parameters
+    ----------
+    df
+
+    Returns
+    -------
+
+    """
+    _df = df.copy()
+
+    numeric_cols = _df.columns[[is_not_binary(_df[x]) for x in _df.columns]]
+    binary_cols = _df.columns[[is_binary(_df[x]) for x in _df.columns]]
+
+    _df_numeric = _df.loc[:, numeric_cols]
+    _df_binary = _df.loc[:, binary_cols]
+
+    _df_z = _df_numeric.apply(func_to_apply, axis=0)
+    _df_z.columns = _df_numeric.columns
+    _df_z.index = _df_binary.index
+    print(_df_z.describe())
+    #import pdb; pdb.set_trace()
+
+    if set(_df_z.index) != set(_df_binary.index):
+        print('ERROR! indices are not aligned!')
+        import pdb;pdb.set_trace()
+
+    out = pd.concat([_df_z, _df_binary], axis=1)
+
+    counts = out.count(axis=0).values
+    if len(counts[counts == 0]) > 0:
+        print("some factors have zero coverage! ")
+        import pdb; pdb.set_trace()
+
+    if any([x for x in out.count(axis=0).values if x == 0]):
+        print('ERROR! one or more factors are all NA')
+        import pdb;pdb.set_trace()
+
+    if out.shape != _df.shape:
+        print(" shapes not correct! something is wrong")
+        import pdb; pdb.set_trace()
+    #import pdb;pdb.set_trace()
+    return out.replace(np.NaN, 0.000)
+
+
 
 
 def ols_get_coefs(X, y, w=None):

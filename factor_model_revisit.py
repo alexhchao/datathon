@@ -33,6 +33,7 @@ X = X_with_dummies.loc[:,cols_for_X ]
 ###############
 # factor model object
 ##################
+
 dts = pd.date_range(start='2005-12-31', end='2015-12-31', freq = 'BM')
 
 X_raw = X_raw.reset_index()
@@ -61,15 +62,77 @@ X_m = np.array(X)
     #############
 X_new_dts['size'] = np.log(X_new_dts['mktcap'])
 
-model = factor_risk_model(X_new_dts)
-model.calc_factor_ports_and_returns(list_dates=['2006-01-31','2006-02-28'],
+###########################
+# argo - sunday 3-24-2019
+###########################
+list_factors=['sector', 'momentum','quality','growth','vol','value','size']
+
+
+df_new = pd.read_csv('stock_data_actual_dates.csv').iloc[:,1:]
+#df_new = df_new.set_index('stock')
+
+dt_list = list(df_new.date.unique()[48:])
+
+model = factor_risk_model(df_new)
+
+model.dates
+
+#model.df.loc[:,list_factors].groupby('date').count().plot()
+
+model.calc_factor_ports_and_returns(list_dates= None,
     list_factors=['sector', 'momentum','quality','growth','vol','value','size'])
 
-model.calc_factor_ports_and_returns(list_factors=['sector', 'momentum','quality','growth','vol','value','size'])
+#model.calc_factor_ports_and_returns(list_factors=['sector', 'momentum','quality','growth','vol','value','size'])
 # doesnt work on 10-29-2010
 # need to figure out hwy
+# issue with taking max of series with NA!
+
+model.factor_portfolios.groupby(['date','factor']).weight.sum().unstack().describe()
+
+np.cumprod(1+model.factor_returns).to_csv('factor_wealth.csv')
+
+model.factor_returns.to_csv('FMP_returns.csv')
+
+################################
+# calc factor cov matrix!
+#######################################
+# covariance   V = F*F' / (T-1)
+# weighted cov V = F W F' / (T-1)
+
+cov_real = model.factor_returns.cov()
+
+F = model.factor_returns.T
+N = F.shape[1]
+
+F.mean(axis=1)
+
+cov_real -F.dot(F.T)/(N-1)
+
+F.dot(F.T)/(N-1)
+
+#######################################
+# exp wets
+# w_t = (2/w_sum)~(-(T-t)/lambda)
+
+lamb = 60
+T = 120
+
+[()t for t in np.arange(1,T+1)]
+
+
+
+#######################################
 
 X_new_dts.to_csv("")
+
+
+df = df_new.copy()
+
+df.index.names[0]==None
+
+df = df.set_index(['date','stock'])
+
+list(df.index.names)==['date','stock']
 
 
 
