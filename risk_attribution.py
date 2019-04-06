@@ -52,16 +52,15 @@ h.T.dot(V)*(u)
 
 u
 
-
-
 return_contrib = h.T*(R)
 return_contrib
 
 
+factor_attrib.u
 
 factor_attrib = factorAttribution(V=V,
                  h=h,
-                 S=S,
+                 S=np.identity(4),
                  R=R)
 
 factor_attrib.port_var

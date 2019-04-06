@@ -105,7 +105,10 @@ def zscore_but_ignore_binary_cols(df,
     _df_z = _df_numeric.apply(func_to_apply, axis=0)
     _df_z.columns = _df_numeric.columns
     _df_z.index = _df_binary.index
+
+    _df_z = _df_z.replace(np.NaN,0.000)
     print(_df_z.describe())
+
     #import pdb; pdb.set_trace()
 
     if set(_df_z.index) != set(_df_binary.index):

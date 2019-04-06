@@ -69,12 +69,15 @@ class factorAttribution(object):
 
         # resid portfolio
         self.u = self.h - self.S.T.dot(B)
+        self.resid_port = self.u
 
         # risk contrib from resid
         self.risk_contrib_from_resid = self.h.T.dot(self.V)*(self.u)/ self.port_vol
+        # should these be split out into factors? no right? (replace * with dot)
 
         # return contrib from resid
         self.return_contrib_from_resid = self.u.T * (self.R)
+        # should these be split out into factors? no right? (replace * with dot)
 
     def check_all_dims_align(self):
         return self.V.shape[0]==self.h.shape[0]==self.S.shape[0]==self.R.shape[0]

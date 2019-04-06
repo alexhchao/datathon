@@ -69,18 +69,34 @@ list_factors=['sector', 'momentum','quality','growth','vol','value','size']
 
 
 df_new = pd.read_csv('stock_data_actual_dates.csv').iloc[:,1:]
+
 #df_new = df_new.set_index('stock')
 
 dt_list = list(df_new.date.unique()[48:])
 
+##########
+
 model = factor_risk_model(df_new)
-
-model.dates
-
-#model.df.loc[:,list_factors].groupby('date').count().plot()
-
 model.calc_factor_ports_and_returns(list_dates= None,
     list_factors=['sector', 'momentum','quality','growth','vol','value','size'])
+
+model.specific_returns
+
+model.factor_portfolios.groupby(['date','factor']).weight.sum()
+
+
+model.calculate_factor_cov_matrix(window=12)
+
+model.all_cov_mat
+
+model.factor_returns
+# specific returns
+u = r - X*f
+
+# V = XFX' + delta
+# r = X * f + u
+
+
 
 #model.calc_factor_ports_and_returns(list_factors=['sector', 'momentum','quality','growth','vol','value','size'])
 # doesnt work on 10-29-2010
@@ -97,18 +113,95 @@ model.factor_returns.to_csv('FMP_returns.csv')
 # calc factor cov matrix!
 #######################################
 # covariance   V = F*F' / (T-1)
-# weighted cov V = F W F' / (T-1)
+# weighted cov V   =   F    W   F'   / (T-1)
+#              kxk     kxT  TxT Txk
+T = model.factor_returns.T.shape[1]
+T = total months
+
+
+
+w = get_exp_weights(window = window, half_life = 6)
+
+
+W.columns = F.columns
+W.index = F.columns
 
 cov_real = model.factor_returns.cov()
 
-F = model.factor_returns.T
+T
+
+np.diag([1,2,3])
+
+################
+# calc factor cov matrix!
+#######################################
+window = 12
+w = get_exp_weights(window = window, half_life = window/2)
+
+all_cov_mat = {}
+all_corr_mat = {}
+
+i=0
+for i in range(0,T-window+1):
+    print(i)
+    F = model.factor_returns[i:i+window].T
+    last_dt = F.columns[-1]
+    _V = calc_exp_wt_cov_mat(F, w)
+    _C = cov_to_corr(_V)
+
+    all_cov_mat[last_dt] = _V
+    all_corr_mat[last_dt] = _C
+
+all_corr_mat
+
+
+
+############
+
+
+corr_to_cov(C = cov_to_corr(_V), D = np.diag(_V) )
+
+__v = D.dot(_C).dot(D)
+
+pd.DataFrame(__v )
+
+
+
+
+
+
+
 N = F.shape[1]
+
+F.T.cov()
+
+F.mean(axis=1)
+_f = F.apply(lambda x: x-x.mean())
+
+#_f.T.cov()
+
+cov_mat = F.dot(F.T)/(N-1)
+cov_mat_w = F.dot(W).dot(F.T)/(N-1)
+cov_mat_w
+
+#######
+# convert cov to corr
+D = np.diag(np.sqrt(np.diagonal(cov_mat_w)))
+
+cov_to_corr(V)
+
+corr = np.linalg.inv(D).dot(cov_mat_w).dot(np.linalg.inv(D))
+pd.DataFrame(corr )
+
+######
 
 F.mean(axis=1)
 
 cov_real -F.dot(F.T)/(N-1)
 
 F.dot(F.T)/(N-1)
+
+F.dot()
 
 #######################################
 # exp wets
@@ -118,6 +211,14 @@ lamb = 60
 T = 120
 
 [()t for t in np.arange(1,T+1)]
+
+##############
+# covariance matrix decomposition
+#################################
+# V = D * C * D'
+# C = correlation matrix
+# D = diagonal of volatilities
+D = np.sqrt(np.diag(V))
 
 
 
