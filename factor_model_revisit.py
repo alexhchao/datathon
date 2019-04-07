@@ -79,13 +79,94 @@ dt_list = list(df_new.date.unique()[48:])
 model = factor_risk_model(df_new)
 model.calc_factor_ports_and_returns(list_dates= None,
     list_factors=['sector', 'momentum','quality','growth','vol','value','size'])
+model.calculate_factor_cov_matrix(window = 60)
+model.calculate_stock_covariance_matrix()
 
-model.specific_returns
+cov_to_corr(model.all_stock_covariance_mat[dt])
+
+
+
+##############
+
+
+cov_to_corr()
+np.diagonal(model.all_specific_variances['2015-12-31'])*1000
+
+##########
+# calc nxn risk model! yay! finally
+
+V = X * F * X.T + DELTA
+
+dt = '2015-12-31'
+
+X = model.all_factor_exposures[dt]
+_F = model.all_covariance_mat[dt]
+
+_DELTA = model.all_specific_variances[dt]
+
+_DELTA.shape
+
+X.dot(_F).dot(X.T) + _DELTA
+
+###########
+
+model.factor_returns
+model.n
+
+
+dt = '2006-03-31'
+
+model.specific_returns.loc[dt].dropna()
+model.all_factor_exposures[dt]
+
+#model.df.describe()
 
 model.factor_portfolios.groupby(['date','factor']).weight.sum()
 
+model.calculate_factor_cov_matrix(window=36)
 
-model.calculate_factor_cov_matrix(window=12)
+model.df
+
+u = model.specific_returns
+
+u.loc[:,['S726','S727','S728']].iloc[:12,:].to_clipboard()
+
+r = np.array([.02, -.02, .55, -.55])
+
+w = get_exp_weights(window = 4,half_life = 2)
+
+get_exp_weights(window = 16,half_life = 8)
+
+[(0.5)**((12-t)/6) for t in range(1,13)]
+
+#############
+# save down factor and spec returns!
+
+_factor_portfolios = model.factor_portfolios.copy()
+_factor_portfolio_returns = model.factor_returns.copy()
+_specific_returns = model.specific_returns.copy()
+
+
+model_2 = factor_risk_model(df = df_new)
+model_2.calc_factor
+    ,
+                           # factor_portfolios=_factor_portfolios,
+                           # factor_returns=_factor_portfolio_returns,
+                           # specific_returns=_specific_returns
+                            )
+model_2.calculate_factor_cov_matrix()
+
+model_2.all_specific_variances
+
+#######################
+
+r.T.dot(r)/4
+r.T.dot(np.diag(w)).dot(r)
+
+
+calc_exp_wt_cov_mat(u.iloc[:12,:].T, w)
+
+model.all_corr_mat
 
 model.all_cov_mat
 
@@ -95,6 +176,7 @@ u = r - X*f
 
 # V = XFX' + delta
 # r = X * f + u
+# STILL TO DO : calc specific variance!
 
 
 

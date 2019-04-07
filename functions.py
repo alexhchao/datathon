@@ -68,29 +68,30 @@ def cov_to_corr(V):
         return np.linalg.inv(D).dot(V).dot(np.linalg.inv(D))
 
 
-
-
-def get_exp_weights(window,
-                    half_life,
-                    order = 'sorted'):
+def get_exp_weights(window, half_life):
     """
-    
+    get true exponential weights (most recent w=1, w at halflife is 0.5, etc)
+
     Parameters
     ----------
     window
     half_life
-    order
 
     Returns
     -------
 
     """
-    exp_wts = 0.5**(np.arange(0, window)/half_life)
-    exp_wts = exp_wts / sum(exp_wts)
-    if order == 'sorted':
-        return np.sort(exp_wts)
-    else:
-        return exp_wts
+    return [(0.5) ** ((window - t) / half_life) for t in range(1, window + 1)]
+
+#def get_exp_weights(window,
+#                    half_life,
+#                    order = 'sorted'):
+#    exp_wts = 0.5**(np.arange(0, window)/half_life)
+#    exp_wts = exp_wts / sum(exp_wts)
+#    if order == 'sorted':
+#        return np.sort(exp_wts)
+#    else:
+#        return exp_wts
 
 def smart_set_index(df, index):
     """
