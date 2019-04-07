@@ -84,7 +84,54 @@ model.calculate_stock_covariance_matrix()
 
 cov_to_corr(model.all_stock_covariance_mat[dt])
 
+############
+# lets run some attributions!
+dt
 
+factor_port = model.factor_portfolios.query("date==@dt").query(" factor=='momentum' ").set_index('stock').weight
+other_ports = model.factor_portfolios.query("date==@dt").query(" factor!='momentum' ").set_index(['stock','factor']).weight.unstack()
+
+factor_this_dt = model.factor_portfolios.query("date==@dt")
+
+factor_this_dt[factor_this_dt.factor.isin(list_factors)].set_index(['stock','factor']).weight.unstack()
+
+list_stocks = factor_port.index
+fwd_rets = model.df.query("date == @dt").reset_index()[model.df.query(
+    "date == @dt").reset_index().stock.isin(list_stocks)].set_index('stock').fwd_returns*0.01
+
+list_factors = other_ports.columns
+
+factor_cov = model.all_factor_covariance_mat[dt]
+
+
+factor_exp = factorAttribution(V = np.array(model.all_stock_covariance_mat[dt]),
+                               F = np.array(factor_cov.loc[list_factors ,list_factors ]),
+                     h = np.array(factor_port) ,
+                     S = np.array(other_ports) ,
+                     R = np.array(fwd_rets))
+factor_exp
+
+[x for x in factor_exp.return_contrib_from_factors]
+
+# factor returns
+factor_rets = factor_exp.S.T.dot(R)
+
+factor_exp.port_factor_exposure.dot(factor_rets )
+
+factor_exp.S.dot(factor_exp.port_factor_exposure)
+
+factor_exp.factor_vol
+
+
+#############
+# save down factor and spec returns!
+
+_factor_portfolios = model.factor_portfolios.copy()
+_factor_portfolio_returns = model.factor_returns.copy()
+
+#model.factor_wealth.iloc[:,:6].plot()
+
+_specific_returns = model.specific_returns.copy()
 
 ##############
 
@@ -139,12 +186,6 @@ get_exp_weights(window = 16,half_life = 8)
 
 [(0.5)**((12-t)/6) for t in range(1,13)]
 
-#############
-# save down factor and spec returns!
-
-_factor_portfolios = model.factor_portfolios.copy()
-_factor_portfolio_returns = model.factor_returns.copy()
-_specific_returns = model.specific_returns.copy()
 
 
 model_2 = factor_risk_model(df = df_new)

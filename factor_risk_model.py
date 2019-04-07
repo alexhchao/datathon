@@ -70,6 +70,7 @@ class factor_risk_model(object):
         all_specific_rets = []
         self.all_factor_exposures = {}
         self.n = {}
+        self.fwd_rets = {}
 
         for dt in list_dates:
             print(dt)
@@ -89,8 +90,10 @@ class factor_risk_model(object):
             r_df = _df.loc[:, [self.fwd_ret_col]] * 0.01
 
             # remove outliers
-            r_df[r_df > 10] = np.NaN
-            r_df[r_df < -1] = np.NaN
+            r_df[r_df > 10] = 10
+            r_df[r_df < -1] = -.99
+
+            self.fwd_rets[dt] = r_df
 
             #import pdb;pdb.set_trace()
 
@@ -299,6 +302,29 @@ class factor_risk_model(object):
 
         print('all stock by stock cov matrices saved under all_stock_covariance_mat')
 
+
+    @property
+    def get_factor_portfolio_holdings(self,
+                                      date,
+                                      factors):
+        """
+        
+        Parameters
+        ----------
+        date
+        factor
+
+        Returns
+        -------
+
+        """
+        if isinstance(factors, str):
+            return self.factor_portfolios.query("date==@date").query(
+                       " factor==@factors ").set_index('stock').weight
+        elif isinstance(factors, list):
+            factor_this_dt = self.factor_portfolios.query("date==@dt")
+            return factor_this_dt[factor_this_dt.factor.isin(
+                factors)].set_index(['stock','factor']).weight.unstack()
 
     @property
     def factor_portfolio_stats(self):

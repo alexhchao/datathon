@@ -6,6 +6,8 @@ import pandas as pd
 
 V = np.array([[0.0232, 0.0163, 0.0095],[0.0163, 0.2601, 0.0122],[0.0095, 0.0122, 0.0174]])
 
+F = V
+
 h = np.array([-0.3, 0.5, 0.8])
 
 S = np.identity(3)
@@ -60,8 +62,10 @@ factor_attrib.u
 
 factor_attrib = factorAttribution(V=V,
                  h=h,
-                 S=np.identity(4),
+                F = F,
+                 S=np.identity(3),
                  R=R)
+factor_attrib
 
 factor_attrib.port_var
 factor_attrib.port_vol
