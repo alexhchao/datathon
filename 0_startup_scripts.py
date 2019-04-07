@@ -37,10 +37,13 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 sns.set()
 pd.options.display.float_format = '{:,.4f}'.format
-float_formatter = lambda x: "%.2f" % x
+float_formatter = lambda x: "%.4f" % x
 np.set_printoptions(formatter={'float_kind':float_formatter})
 
 pd.options.display.max_rows = 20
 pd.options.display.max_columns = 20
+
+desired_width = 180
+pd.set_option('display.width', desired_width)
 
 

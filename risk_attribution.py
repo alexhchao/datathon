@@ -64,7 +64,59 @@ factor_attrib = factorAttribution(V=V,
                  h=h,
                 F = F,
                  S=np.identity(3),
-                 R=R)
+                 R=R,
+              list_factors = ['S1','S2','S3'])
+
+factor_attrib.all_factor_risk_return_contrib.T
+factor_attrib
+
+
+list_factors = ['S1','S2','S3']
+pd.DataFrame(factor_attrib.risk_contrib_from_factors,index = list_factors)
+
+# what if we used col and row names?
+########################
+V = pd.DataFrame(V)
+
+V.columns = ['X','Y','Z']
+V.index = ['X','Y','Z']
+
+h = pd.DataFrame(h)
+h.index = ['X','Y','Z']
+
+S = pd.DataFrame(np.identity(3))
+S = pd.DataFrame(S)
+S.index = ['X','Y','Z']
+S.columns = ['S1','S2','S3']
+
+R = pd.DataFrame(R)
+R.index = ['X','Y','Z']
+
+F = pd.DataFrame(F)
+F.index = ['S1','S2','S3']
+F.columns= ['S1','S2','S3']
+
+
+
+factor_attrib = factorAttribution(V=np.array(V),
+                         h=np.array(h),
+                        F = np.array(F),
+                         S=np.array(S),
+                         R=np.array(R))
+factor_attrib
+
+port_vol = np.sqrt(h.T.dot(V).dot(h) )
+
+h.T.dot(V).dot(S) / port_vol * B
+
+B = np.linalg.inv(S.T.dot(V).dot(S)).dot(S.T.dot(V).dot(h))
+
+B = pd.DataFrame(B)
+B.index = ['S1','S2','S3']
+
+##################
+
+
 factor_attrib
 
 factor_attrib.port_var

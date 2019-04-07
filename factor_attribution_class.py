@@ -11,7 +11,8 @@ class factorAttribution(object):
                  F,
                  h,
                  S,
-                 R):
+                 R,
+                 list_factors = None):
         """
         
         Parameters
@@ -34,12 +35,22 @@ class factorAttribution(object):
 
         self.n = h.shape[0]
         self.k = S.shape[1]
+
+        if (list_factors is not None) and (len(list_factors)==self.k):
+            self.list_factors = list_factors
+        else:
+            self.list_factors = np.arange(1,self.k+1)
+
         if self.check_all_dims_align() == False:
             print(" V={}, h={}, S={}, R={}".format(V.shape,
                                                    h.shape,
                                                    S.shape,
                                                    R.shape))
             raise ValueError(" Dimensions not aligned! please check again")
+
+        if isinstance(S, pd.DataFrame):
+            self.list_stocks = list(S.index)
+            self.list_factors = list(S.columns)
 
         # calc factor risk / return contributions
 
@@ -93,6 +104,45 @@ class factorAttribution(object):
         self.return_contrib_from_resid = self.u.T.dot(self.R)
         # should these be split out into factors? no right? (replace * with dot)
 
+    @property
+    def risk_contrib_from_factors_out(self):
+        return pd.DataFrame(self.risk_contrib_from_factors,
+                            index = self.list_factors,
+                            columns = ['risk_contrib_from_factors'])
+
+    @property
+    def risk_contrib_from_factors_pct_out(self):
+        return pd.DataFrame(self.risk_contrib_from_factors_pct,
+                            index=self.list_factors,
+                            columns = ['risk_contrib_from_factors_pct'])
+
+    @property
+    def return_contrib_from_factors_out(self):
+        return pd.DataFrame(self.return_contrib_from_factors,
+                            index=self.list_factors,
+               columns = ['return_contrib_from_factors'])
+
+    @property
+    def port_factor_exposure_out(self):
+        return pd.DataFrame(self.port_factor_exposure,
+                            index=self.list_factors,
+               columns = ['port_factor_exposure'])
+
+    @property
+    def vol_adj_factor_exposure_out(self):
+        return pd.DataFrame(self.vol_adj_factor_exposure,
+                            index=self.list_factors,
+               columns = ['vol_adj_factor_exposure'])
+
+    @property
+    def all_factor_risk_return_contrib(self):
+        return pd.concat([self.port_factor_exposure_out,
+                         self.vol_adj_factor_exposure_out,
+                         self.risk_contrib_from_factors_out,
+                         self.risk_contrib_from_factors_pct_out,
+                         self.return_contrib_from_factors_out
+                         ], axis=1)
+
     def check_all_dims_align(self):
         return self.V.shape[0]==self.h.shape[0]==self.S.shape[0]==self.R.shape[0]
 
@@ -101,35 +151,34 @@ class factorAttribution(object):
         factorAttribution class
         =======================
         Portfolio Variance = {}
-        Portfolio Vol = {}
-        Portfolio Returns = {}
-        
-        Exposures
+
+        Exposures / Risk Contributions
         =========
-        Portfolio Factor Exposures = {}
-        Vol Adj Factor Exposures = {}
+        {}
         
         Risk Contributions
         ==================
+        Portfolio Vol             = {}
         Risk Contrib from Factors = {}
-        Risk Contrib from Factors (%) = {}
-        Risk Contrib from Resid = {}
+        Risk Contrib from Resid   = {}
         
         Return Contributions
         ==================
+        Portfolio Returns           = {}
         Return Contrib from Factors = {}
-        Return Contrib from Resid = {}
-        
-        
+        Return Contrib from Resid   = {}
         """.format(self.port_var,
-                    self.port_vol,
-                   self.port_returns,
-                    self.port_factor_exposure,
-                    self.vol_adj_factor_exposure,
-                   self.risk_contrib_from_factors,
-                   self.risk_contrib_from_factors_pct,
+
+
+                   self.all_factor_risk_return_contrib,
+                   # self.port_factor_exposure_out,
+                   # self.vol_adj_factor_exposure_out,
+                   self.port_vol,
+                   self.risk_contrib_from_factors_out.sum()[0],
+                   #self.risk_contrib_from_factors_pct_out,
                    self.risk_contrib_from_resid,
-                   [x for x in self.return_contrib_from_factors],
+                   self.port_returns,
+                   self.return_contrib_from_factors_out.sum()[0],
                    self.return_contrib_from_resid
                    ))
 

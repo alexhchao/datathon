@@ -108,8 +108,11 @@ factor_exp = factorAttribution(V = np.array(model.all_stock_covariance_mat[dt]),
                                F = np.array(factor_cov.loc[list_factors ,list_factors ]),
                      h = np.array(factor_port) ,
                      S = np.array(other_ports) ,
-                     R = np.array(fwd_rets))
+                     R = np.array(fwd_rets),
+                               list_factors = list_factors)
 factor_exp
+
+factor_exp.risk_contrib_from_factors_out.sum(axis=0)[0]
 
 [x for x in factor_exp.return_contrib_from_factors]
 
