@@ -260,7 +260,7 @@ factor_exp = factorAttribution(V = np.array(model.all_stock_covariance_mat[dt]),
                      R = np.array(fwd_rets),
                    list_factors = list_factors_in_S)
 
-V.shape
+factor_exp
 
 factor_exp.return_contrib_from_factors
 
@@ -280,6 +280,8 @@ factor_exp
 
 # hmmm momentum FMP isnt orthogonal to other factors..
 # what if we throw in momentum into the right hand side?
+dt = '2015-11-30'
+
 _V = model.all_stock_covariance_mat[dt]
 
 _V_inv = pd.DataFrame(np.linalg.inv(_V), index = _V.index, columns = _V.columns)
@@ -293,13 +295,16 @@ factor_port = model.all_FMPs[dt][factor_name]
 list_factors_in_S = [list_factors]
 other_ports = model.all_FMPs[dt][list_factors]
 
-factor_exp = factorAttribution(V = np.array(model.all_stock_covariance_mat[dt]),
+factorAttr = factorAttribution(V = np.array(model.all_stock_covariance_mat[dt]),
                                F = _F.loc[list_factors, list_factors],
                      h = np.array(factor_port) ,
                      S = np.array(other_ports) ,
                      R = np.array(fwd_rets),
                    list_factors = list_factors)
-factor_exp
+factorAttr
+# this shows very clearly one exposure to momentum
+model.factor_returns
+
 H = other_ports
 
 H.dot(V).dot()

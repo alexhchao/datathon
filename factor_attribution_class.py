@@ -186,9 +186,9 @@ class factorAttribution(object):
                    self.risk_contrib_from_factors_out.sum()[0],
                    #self.risk_contrib_from_factors_pct_out,
                    self.risk_contrib_from_resid,
-                   self.port_returns,
+                   self.port_returns[0],
                    self.return_contrib_from_factors_out.sum()[0],
-                   self.return_contrib_from_resid
+                   self.return_contrib_from_resid[0]
                    ))
 
 
