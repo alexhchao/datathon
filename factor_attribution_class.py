@@ -28,11 +28,12 @@ class factorAttribution(object):
         if V.shape[0] != V.shape[1]:
             raise ValueError(" Cov matrix V is not square!")
 
-        self.V = V # n x n
-        self.F = F # k x k
-        self.h = h # n x 1
-        self.S = S # n x k
-        self.R = R # n x 1
+        #if isinstance(V, pd.DataFrame):
+        self.V = np.array(V) # n x n
+        self.F = np.array(F) # k x k
+        self.h = np.array(h) # n x 1
+        self.S = np.array(S) # n x k
+        self.R = np.array(R) # n x 1
 
         self.n = h.shape[0]
         self.k = S.shape[1]
@@ -95,9 +96,10 @@ class factorAttribution(object):
         self.factor_returns = self.S.T.dot(R)
 
         # E) Return contribution
+        # return contrib from factors = B * S' * R
         #self.return_contrib_from_factors = self.h.T * (self.R) # this is wrong...
 #        self.return_contrib_from_factors = self.R.T.dot(S)*B.dot(factor_rets )
-        self.return_contrib_from_factors = B*(self.factor_returns)
+        self.return_contrib_from_factors = (self.port_factor_exposure*(self.factor_returns.T)).T
 
         # resid portfolio
         self.u = self.h - self.S.dot(B)

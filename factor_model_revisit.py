@@ -115,13 +115,13 @@ H_V = calculate_FMP(X = model.all_factor_exposures[dt],
 
 H_V - H_D
 
+
 V = model.all_stock_covariance_mat[dt]
 V_diag = np.diag(np.diagonal(model.all_stock_covariance_mat[dt]))
 V_diag = pd.DataFrame(V_diag, index = V.index, columns = V.columns)
 
 H_V_Diag = calculate_FMP(X = model.all_factor_exposures[dt],
               D = V_diag)
-
 
 
 ident= np.identity(model.all_factor_exposures[dt].shape[0])
@@ -131,7 +131,38 @@ id = pd.DataFrame(ident, index = model.all_factor_exposures[dt].index,
 calculate_FMP(X = model.all_factor_exposures[dt],
               D = id)
 
+################
+# H' X = Identity, what about H' V X = ? or H' D X  = ?
+X = model.all_factor_exposures[dt]
+H_D.T.dot(X)
+# yes this equals the idnetity matrix
+D = model.all_specific_variances[dt]
+D_inv = inverse_of_df(D)
+V = model.all_stock_covariance_mat[dt]
+V_inv = inverse_of_df(V)
 
+def inverse_of_df(df):
+    """
+    better version of np.linalg.inv()
+    
+    Parameters
+    ----------
+    df
+
+    Returns
+    -------
+
+    """
+    return pd.DataFrame(np.linalg.inv(df),
+                        index = df.index,
+                        columns = df.columns)
+
+H_D.T.dot(D).dot(X)
+H_D.T.dot(V).dot(X)
+
+
+
+################
 D_inv = pd.DataFrame(np.linalg.inv(D),
                          index=D.index, columns=D.columns)
 
@@ -209,14 +240,18 @@ H_X ==np.identity(H_X .shape[0])
 
 ##################
 # now pick one factor and run attribution on it
+factor_cov = model.all_factor_covariance_mat[dt]
+
+list_factors = factor_cov.columns
 
 _F = factor_cov.loc[list_factors ,list_factors]
-list_factors = list(_F.index)
+#list_factors = list(_F.index)
 
 factor_name = 'momentum'
 factor_port = model.all_FMPs[dt][factor_name]
 list_factors_in_S = [x for x in list_factors if x != factor_name]
 other_ports = model.all_FMPs[dt][list_factors_in_S ]
+fwd_rets = model.fwd_rets[dt]
 
 factor_exp = factorAttribution(V = np.array(model.all_stock_covariance_mat[dt]),
                                F = _F.loc[list_factors_in_S, list_factors_in_S],
@@ -224,6 +259,22 @@ factor_exp = factorAttribution(V = np.array(model.all_stock_covariance_mat[dt]),
                      S = np.array(other_ports) ,
                      R = np.array(fwd_rets),
                    list_factors = list_factors_in_S)
+
+V.shape
+
+factor_exp.return_contrib_from_factors
+
+factor_exp.port_factor_exposure.shape
+factor_exp.factor_returns.shape
+
+pd.DataFrame(factor_exp.return_contrib_from_factors.T,
+                            index=factor_exp.list_factors,
+               columns = ['return_contrib_from_factors'])
+
+factor_exp.port_factor_exposure*factor_exp.factor_returns.T
+(factor_exp.port_factor_exposure*factor_exp.factor_returns.T).T
+
+len(list_factors_in_S)
 
 factor_exp
 
