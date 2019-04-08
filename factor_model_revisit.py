@@ -58,15 +58,14 @@ X_new_dts.to_csv('stock_data_actual_dates.csv')
 X_m = np.array(X)
 
             #import pdb; pdb.set_trace()
-
     #############
 X_new_dts['size'] = np.log(X_new_dts['mktcap'])
 
 ###########################
-# argo - sunday 3-24-2019
+# START HERE - Sunday 4-8-2019
 ###########################
-list_factors=['sector', 'momentum','quality','growth','vol','value','size']
 
+list_factors=['sector', 'momentum','quality','growth','vol','value','size']
 
 df_new = pd.read_csv('stock_data_actual_dates.csv').iloc[:,1:]
 
@@ -75,17 +74,186 @@ df_new = pd.read_csv('stock_data_actual_dates.csv').iloc[:,1:]
 dt_list = list(df_new.date.unique()[48:])
 
 ##########
-
 model = factor_risk_model(df_new)
+
+model = factor_risk_model(df_new,
+                          factor_portfolios = _factor_portfolios,
+                          factor_returns = _factor_portfolio_returns,
+                          specific_returns = _specific_returns,
+                          all_factor_exposures = _all_factor_exposures)
+
+# this takes a few min
 model.calc_factor_ports_and_returns(list_dates= None,
     list_factors=['sector', 'momentum','quality','growth','vol','value','size'])
+
 model.calculate_factor_cov_matrix(window = 60)
 model.calculate_stock_covariance_matrix()
+model.calculate_FMPs()
+
+model.all_FMPs[dt]
+model.all_FMPs_using_V[dt]
+
+###############
+
 
 cov_to_corr(model.all_stock_covariance_mat[dt])
 
+
+model.all_specific_variances[dt].head()
+############
+# wait a sec FMP using V and DELTA yields the same hting? WTF ?
+# WHY
+# using diagonal of V doesnt yield the same thing
+############
+
+H_D = calculate_FMP(X = model.all_factor_exposures[dt],
+              D = model.all_specific_variances[dt])
+
+H_V = calculate_FMP(X = model.all_factor_exposures[dt],
+              D = model.all_stock_covariance_mat[dt])
+
+H_V - H_D
+
+V = model.all_stock_covariance_mat[dt]
+V_diag = np.diag(np.diagonal(model.all_stock_covariance_mat[dt]))
+V_diag = pd.DataFrame(V_diag, index = V.index, columns = V.columns)
+
+H_V_Diag = calculate_FMP(X = model.all_factor_exposures[dt],
+              D = V_diag)
+
+
+
+ident= np.identity(model.all_factor_exposures[dt].shape[0])
+id = pd.DataFrame(ident, index = model.all_factor_exposures[dt].index,
+        columns = model.all_factor_exposures[dt].index)
+
+calculate_FMP(X = model.all_factor_exposures[dt],
+              D = id)
+
+
+D_inv = pd.DataFrame(np.linalg.inv(D),
+                         index=D.index, columns=D.columns)
+
+H = np.linalg.inv(X.T.dot(D_inv).dot(X)).dot(X.T.dot(D_inv))
+
+H_1 = H.T
+H_df = pd.DataFrame(H_1,
+                    index=X.index, columns=X.columns)
+
+V_inv = pd.DataFrame(np.linalg.inv(V),
+                         index=V.index, columns=V.columns)
+
+H_V = np.linalg.inv(X.T.dot(V_inv).dot(X)).dot(X.T.dot(V_inv))
+
+D
+V
+
+def calculate_FMP(X, D):
+    """
+    
+    Parameters
+    ----------
+    H
+    W
+
+    Returns
+    -------
+
+    """
+
+    D_inv = pd.DataFrame(np.linalg.inv(D),
+                         index=D.index, columns=D.columns)
+
+    H = np.linalg.inv(X.T.dot(D_inv).dot(X)).dot(X.T.dot(D_inv))
+    H_1 = H.T
+    H_df = pd.DataFrame(H_1,
+                        index=X.index, columns=X.columns)
+    return H_df
+
+
 ############
 # lets run some attributions!
+# NEXT STEP:
+# need to form new FMPs! using the _DELTA from risk model!
+###########
+# H' = (X * D * X')-1 * X' D
+# H * v * w = 0
+# P = H * B + w
+dt = '2015-12-31'
+
+model.all_stock_covariance_mat
+model.specific_returns
+
+D = model.all_specific_variances[dt]
+
+D_inv = pd.DataFrame(np.linalg.inv(D), index= D.index, columns = D.columns)
+
+X = model.all_factor_exposures[dt]
+
+_all_factor_exposures = model.all_factor_exposures
+
+#_X = np.as_array(X)
+H = np.linalg.inv(X.T.dot(D_inv).dot(X)).dot(X.T.dot(D_inv))
+H_1 = H.T
+H_1.shape
+
+H_df = pd.DataFrame(H_1,
+                 index=X.index, columns = X.columns)
+
+# this should yield the identity matrix
+H_X = H_df.T.dot(X)
+
+H_X ==np.identity(H_X .shape[0])
+
+
+##################
+# now pick one factor and run attribution on it
+
+_F = factor_cov.loc[list_factors ,list_factors]
+list_factors = list(_F.index)
+
+factor_name = 'momentum'
+factor_port = model.all_FMPs[dt][factor_name]
+list_factors_in_S = [x for x in list_factors if x != factor_name]
+other_ports = model.all_FMPs[dt][list_factors_in_S ]
+
+factor_exp = factorAttribution(V = np.array(model.all_stock_covariance_mat[dt]),
+                               F = _F.loc[list_factors_in_S, list_factors_in_S],
+                     h = np.array(factor_port) ,
+                     S = np.array(other_ports) ,
+                     R = np.array(fwd_rets),
+                   list_factors = list_factors_in_S)
+
+factor_exp
+
+# hmmm momentum FMP isnt orthogonal to other factors..
+# what if we throw in momentum into the right hand side?
+_V = model.all_stock_covariance_mat[dt]
+
+_V_inv = pd.DataFrame(np.linalg.inv(_V), index = _V.index, columns = _V.columns)
+
+np.linalg.inv(X.T.dot(D_inv).dot(X)).dot(X.T.dot(D_inv))
+
+H_2 =pd.DataFrame(np.linalg.inv(D), index=D.index, columns=D.columns)
+
+factor_name = 'momentum'
+factor_port = model.all_FMPs[dt][factor_name]
+list_factors_in_S = [list_factors]
+other_ports = model.all_FMPs[dt][list_factors]
+
+factor_exp = factorAttribution(V = np.array(model.all_stock_covariance_mat[dt]),
+                               F = _F.loc[list_factors, list_factors],
+                     h = np.array(factor_port) ,
+                     S = np.array(other_ports) ,
+                     R = np.array(fwd_rets),
+                   list_factors = list_factors)
+factor_exp
+H = other_ports
+
+H.dot(V).dot()
+
+##################
+
 dt
 
 factor_port = model.factor_portfolios.query("date==@dt").query(" factor=='momentum' ").set_index('stock').weight
@@ -131,9 +299,7 @@ factor_exp.factor_vol
 
 _factor_portfolios = model.factor_portfolios.copy()
 _factor_portfolio_returns = model.factor_returns.copy()
-
 #model.factor_wealth.iloc[:,:6].plot()
-
 _specific_returns = model.specific_returns.copy()
 
 ##############

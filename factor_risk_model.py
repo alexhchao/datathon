@@ -1,6 +1,9 @@
-#from ols_functions import (zscore_but_ignore_binary_cols,
-#                           normalize, check_if_matrix_has_nans,
-#                           is_binary, is_not_binary)
+import pandas as pd
+import numpy as np
+
+from ols_functions import (zscore_but_ignore_binary_cols,
+                           normalize, check_if_matrix_has_nans,
+                           is_binary, is_not_binary)
 from functions import smart_set_index
 
 class factor_risk_model(object):
@@ -17,7 +20,8 @@ class factor_risk_model(object):
                  date_col='date',
                  factor_portfolios = None,
                  factor_returns = None,
-                 specific_returns = None):
+                 specific_returns = None,
+                 all_factor_exposures = None):
 
         self.sector_col = sector_col
         self.mktcap_col = mktcap_col
@@ -28,6 +32,12 @@ class factor_risk_model(object):
         self.factor_portfolios = factor_portfolios
         self.factor_returns = factor_returns
         self.specific_returns = specific_returns
+        self.all_factor_exposures = all_factor_exposures
+        self.all_factor_covariance_mat = {}
+        self.all_factor_correlation_mat = {}
+        self.all_specific_variances = {}
+        self.valid_dates_for_covariance_matrix = []
+        self.all_FMPs = {}
 
     @property
     def dates(self):
@@ -169,9 +179,9 @@ class factor_risk_model(object):
         print(self.specific_returns.head())
 
         print("factor portfolios saved under factor_portfolios!")
-        print("factor returns saved under factor_returns!")
-        print("specific returns saved under specific_returns!")
-
+        print("factor returns (f) saved under factor_returns!")
+        print("specific returns (u) saved under specific_returns!")
+        print("all factor exposures (X) saved under all_factor_exposures!")
 
     @staticmethod
     def get_factor_ports_and_returns(X, W, R,
@@ -271,15 +281,17 @@ class factor_risk_model(object):
                     import pdb;pdb.set_trace()
                     print("_DELTA on {} has NA!".format(last_dt))
 
-            _C = cov_to_corr(_V)
+                _DELTA = pd.DataFrame(_DELTA, index=valid_stocks, columns = valid_stocks)
 
+            _C = cov_to_corr(_V)
+            #import pdb;pdb.set_trace()
             self.all_factor_covariance_mat[last_dt] = _V
             self.all_factor_correlation_mat[last_dt] = _C
             self.all_specific_variances[last_dt] = _DELTA
 
-        print('all factor cov matrices saved under all_factor_covariance_mat')
+        print('all factor cov matrices (F) saved under all_factor_covariance_mat')
         print('all factor corr matrices saved under all_factor_correlation_mat')
-        print('all factor corr matrices saved under all_specific_variances')
+        print('all specific variances (DELTA) saved under all_specific_variances')
 
     def calculate_stock_covariance_matrix(self):
         """
@@ -300,7 +312,91 @@ class factor_risk_model(object):
 
             self.all_stock_covariance_mat[dt] = X.dot(_F).dot(X.T) + _DELTA
 
-        print('all stock by stock cov matrices saved under all_stock_covariance_mat')
+        print('all stock by stock cov matrices (V) saved under all_stock_covariance_mat')
+
+    def calculate_FMPs(self,
+                       #V_or_D = 'D',
+                       list_factors = None):
+        """
+        
+        Parameters
+        ----------
+        V_or_D - use V (cov matrix) or D (spec variance)
+        list_factors
+
+        Returns
+        -------
+
+        """
+
+        self.all_FMPs = {}
+        self.all_FMPs_using_V = {}
+
+        for dt in self.valid_dates_for_covariance_matrix:
+            print(dt)
+
+            if list_factors is None:
+                X = self.all_factor_exposures[dt]
+            else:
+                X = self.all_factor_exposures[dt].loc[:,list_factors]
+            #if V_or_D == 'D':
+            D = self.all_specific_variances[dt]
+            #print(D.head())
+
+            #D_inv = pd.DataFrame(np.linalg.inv(D), index=D.index, columns=D.columns)
+        #elif V_or_D == 'V':
+            V = self.all_stock_covariance_mat[dt]
+            #print(D.head())
+            #V_inv = pd.DataFrame(np.linalg.inv(V), index=V.index, columns=V.columns)
+
+            X = self.all_factor_exposures[dt]
+
+            H_df = self.calculate_FMP(X = X,
+                                      D = D)
+            H_df_using_V = self.calculate_FMP(X = X,
+                                              D = V)
+
+            # _X = np.as_array(X)
+            #H = np.linalg.inv(X.T.dot(D_inv).dot(X)).dot(X.T.dot(D_inv))
+            #H_1 = H.T
+
+            #H_df = pd.DataFrame(H_1,
+            #                    index=X.index, columns=X.columns)
+
+            #H_V = np.linalg.inv(X.T.dot(V_inv).dot(X)).dot(X.T.dot(V_inv))
+            #H_V_1 = H_V.T
+
+            #H_df_using_V = pd.DataFrame(H_V_1,
+            #                    index=X.index, columns=X.columns)
+            self.all_FMPs[dt] = H_df
+            self.all_FMPs_using_V[dt] = H_df_using_V
+
+        print('all FMPs (H) saved under all_FMPs')
+        print('all FMPs (H) (using V instead of D) saved under all_FMPs_using_V')
+
+    @staticmethod
+    def calculate_FMP(X, D):
+        """
+
+        Parameters
+        ----------
+        H
+        W
+
+        Returns
+        -------
+
+        """
+
+        D_inv = pd.DataFrame(np.linalg.inv(D),
+                             index=D.index, columns=D.columns)
+
+        H = np.linalg.inv(X.T.dot(D_inv).dot(X)).dot(X.T.dot(D_inv))
+        H_1 = H.T
+        H_df = pd.DataFrame(H_1,
+                            index=X.index, columns=X.columns)
+        return H_df
+
 
 
     @property
@@ -308,6 +404,11 @@ class factor_risk_model(object):
                                       date,
                                       factors):
         """
+        # these are the factor portfolios from our risk model
+        H' = H' = (X * W * X')-1 * X' W
+        
+        where
+        W = sqrt(mktcap)
         
         Parameters
         ----------

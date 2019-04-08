@@ -22,6 +22,7 @@ class factorAttribution(object):
         h - holdings (n x 1)
         S - source or factor portfolios (n x k), k = num factors
         R - future returns (n x 1)
+        list_factors - list of all factors in S portfolio
         
         """
         if V.shape[0] != V.shape[1]:
@@ -35,6 +36,8 @@ class factorAttribution(object):
 
         self.n = h.shape[0]
         self.k = S.shape[1]
+
+        print(" n = {} stocks, k = {} factors".format(self.n,self.k))
 
         if (list_factors is not None) and (len(list_factors)==self.k):
             self.list_factors = list_factors
@@ -77,7 +80,11 @@ class factorAttribution(object):
         # -4.57%, 25.5%, 10.54%
 
         # C) Risk Contribution (from factors) = h' * V * S * B
-        self.risk_contrib_from_factors = self.h.T.dot(self.V).dot(self.S) / self.port_vol * (B)
+        try:
+            self.risk_contrib_from_factors = self.h.T.dot(self.V).dot(self.S) / self.port_vol * (B)
+        except Exception as e:
+            print(e)
+            import pdb; pdb.set_trace()
 
         # D) Risk Contribution (%)
         self.risk_contrib_from_factors_pct = self.risk_contrib_from_factors / self.port_vol
@@ -153,7 +160,7 @@ class factorAttribution(object):
         Portfolio Variance = {}
 
         Exposures / Risk Contributions
-        =========
+        ==============================
         {}
         
         Risk Contributions
