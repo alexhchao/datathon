@@ -106,7 +106,7 @@ model.all_specific_variances[dt].head()
 # WHY
 # using diagonal of V doesnt yield the same thing
 ############
-
+dt
 H_D = calculate_FMP(X = model.all_factor_exposures[dt],
               D = model.all_specific_variances[dt])
 
@@ -114,6 +114,15 @@ H_V = calculate_FMP(X = model.all_factor_exposures[dt],
               D = model.all_stock_covariance_mat[dt])
 
 H_V - H_D
+
+Id = pd.DataFrame(np.identity(model.all_specific_variances[dt].shape[0]),
+             index = D.index, columns = D.columns)
+
+H_I = calculate_FMP(X = model.all_factor_exposures[dt],
+              D = Id)
+D_inv = inverse_of_df(Id)
+
+H = np.linalg.inv(X.T.dot(D_inv).dot(X)).dot(X.T.dot(D_inv))
 
 
 V = model.all_stock_covariance_mat[dt]
@@ -141,21 +150,7 @@ D_inv = inverse_of_df(D)
 V = model.all_stock_covariance_mat[dt]
 V_inv = inverse_of_df(V)
 
-def inverse_of_df(df):
-    """
-    better version of np.linalg.inv()
-    
-    Parameters
-    ----------
-    df
 
-    Returns
-    -------
-
-    """
-    return pd.DataFrame(np.linalg.inv(df),
-                        index = df.index,
-                        columns = df.columns)
 
 H_D.T.dot(D).dot(X)
 H_D.T.dot(V).dot(X)
@@ -180,6 +175,23 @@ H_V = np.linalg.inv(X.T.dot(V_inv).dot(X)).dot(X.T.dot(V_inv))
 D
 V
 
+
+def inverse_of_df(df):
+    """
+    better version of np.linalg.inv()
+
+    Parameters
+    ----------
+    df
+
+    Returns
+    -------
+
+    """
+    return pd.DataFrame(np.linalg.inv(df),
+                        index=df.index,
+                        columns=df.columns)
+
 def calculate_FMP(X, D):
     """
     
@@ -193,8 +205,7 @@ def calculate_FMP(X, D):
 
     """
 
-    D_inv = pd.DataFrame(np.linalg.inv(D),
-                         index=D.index, columns=D.columns)
+    D_inv = inverse_of_df(D)
 
     H = np.linalg.inv(X.T.dot(D_inv).dot(X)).dot(X.T.dot(D_inv))
     H_1 = H.T
