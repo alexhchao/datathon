@@ -70,11 +70,10 @@ list_factors=['sector', 'momentum','quality','growth','vol','value','size']
 df_new = pd.read_csv('stock_data_actual_dates.csv').iloc[:,1:]
 
 #df_new = df_new.set_index('stock')
-
-dt_list = list(df_new.date.unique()[48:])
+#dt_list = list(df_new.date.unique()[48:])
 
 ##########
-model = factor_risk_model(df_new)
+
 
 model = factor_risk_model(df_new,
                           factor_portfolios = _factor_portfolios,
@@ -82,6 +81,7 @@ model = factor_risk_model(df_new,
                           specific_returns = _specific_returns,
                           all_factor_exposures = _all_factor_exposures)
 
+model = factor_risk_model(df_new)
 # this takes a few min
 model.calc_factor_ports_and_returns(list_dates= None,
     list_factors=['sector', 'momentum','quality','growth','vol','value','size'])
@@ -90,6 +90,7 @@ model.calculate_factor_cov_matrix(window = 60)
 model.calculate_stock_covariance_matrix()
 model.calculate_FMPs()
 
+dt = '2015-12-31'
 model.all_FMPs[dt]
 model.all_FMPs_using_V[dt]
 

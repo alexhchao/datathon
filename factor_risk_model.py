@@ -1,10 +1,9 @@
 import pandas as pd
 import numpy as np
 
-from ols_functions import (zscore_but_ignore_binary_cols,
-                           normalize, check_if_matrix_has_nans,
+from ols_functions import (normalize, zscore_but_ignore_binary_cols,check_if_matrix_has_nans,
                            is_binary, is_not_binary)
-from functions import smart_set_index
+from functions import (smart_set_index, get_exp_weights, cov_to_corr)
 
 class factor_risk_model(object):
     """
@@ -90,7 +89,6 @@ class factor_risk_model(object):
             #_df = _df_all[_df_all[self.date_col] == dt]
             _df = _df_all[_df_all.index.get_level_values(
                 self.date_col) == dt].reset_index(level=0)
-
 
             #_df = _df.loc[:, list_factors + [self.stock_col] + [self.mktcap_col] + [self.fwd_ret_col]]
             _df = _df.loc[:, list_factors + [self.mktcap_col] + [self.fwd_ret_col]]

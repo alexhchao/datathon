@@ -129,6 +129,11 @@ def zscore_but_ignore_binary_cols(df,
     if out.shape != _df.shape:
         print(" shapes not correct! something is wrong")
         import pdb; pdb.set_trace()
+
+    #if check_if_matrix_has_nans(out):
+    #    print(" X (out) still has NA values!!! check zscore_but_ignore_binary_cols")
+    #    import pdb;pdb.set_trace()
+
     #import pdb;pdb.set_trace()
     return out.replace(np.NaN, 0.000)
 
@@ -200,7 +205,7 @@ def plot_pred_vs_actual(pred, actual):
     plt.ylabel('actual')
 
 
-def zscore_but_ignore_binary_cols(df,
+def _OLD_zscore_but_ignore_binary_cols(df,
                                   func_to_apply=zscore):
     """
     returns column zscores but keeps binary variables intact
