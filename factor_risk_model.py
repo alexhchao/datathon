@@ -254,23 +254,24 @@ class factor_risk_model(object):
 
         for i in range(0, T - window + 1):
 
-            F = self.factor_returns[i:i + window].T
-            _u = self.specific_returns[i:i + window].T
+            F = self.factor_returns[i:i + window]
+            _u = self.specific_returns[i:i + window]
 
-            last_dt = F.columns[-1]
+            last_dt = F.index[-1]
             print(last_dt)
             self.valid_dates_for_covariance_matrix.append(last_dt)
 
             # filter down _u into valid stocks only (no NA)
             valid_stocks = list(self.all_factor_exposures[last_dt].index)
-            _u_valid = _u.T.loc[:, valid_stocks]
+            _u_valid = _u.loc[:, valid_stocks]
             if use_exp_weights:
                 # NOT IMPLEMENTED YET!
                 raise NotImplementedError("Not implemented exp weighted cov yet! ")
-                _V = calc_exp_wt_cov_mat(F, w)
+                #_V = calc_exp_wt_cov_mat(F, w)
             else:
-                _V = F.T.cov()
+                _V = F.cov()
                 spec_variances = _u_valid.var(axis=0)
+                #import pdb; pdb.set_trace()
                 # set all missing variances to the median (e.g. if stock only has return history of 1 date)
                 spec_variances = spec_variances.replace(np.NaN, spec_variances.median() )
                 _DELTA = np.diag(spec_variances)

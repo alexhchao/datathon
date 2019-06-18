@@ -1,66 +1,5 @@
 # The Bean - Wed, March 20, 2019
 ##########################################
-from scipy.stats import mstats
-
-from ols_functions import (replace_with_dummies, zscore_but_ignore_binary_cols, \
-    variance_inflation_factors, normalize)
-
-
-X_raw = pd.read_csv('stock_data_renamed.csv')
-
-
-X_raw.groupby('date').count()
-
-#what to do with:
-# missing returns? sector / mktcap ?
-
-X_nona = X_raw.dropna()
-
-X_nona.groupby('date').count()
-
-X_nona['ln_mktcap'] = np.log(X_nona['mktcap'])
-
-X_nona['mktcap'].hist(bins=100)
-
-X_with_dummies = replace_with_dummies(df = X_nona, categorical_cols = 'sector',
-                         leave_one_out=False)
-
-cols_for_X = [x for x in X_with_dummies.columns if x not in ['returns','fwd_returns','mktcap']]
-
-X = X_with_dummies.loc[:,cols_for_X ]
-
-
-###############
-# factor model object
-##################
-
-dts = pd.date_range(start='2005-12-31', end='2015-12-31', freq = 'BM')
-
-X_raw = X_raw.reset_index()
-
-{'D' + }
-
-nums = [x for x in np.arange(0,120)]
-
-dummy_dates = 'D'+pd.Series(nums ).astype(str).str.zfill(3)
-
-date_mapper = pd.concat([dummy_dates, pd.Series(dts)],axis=1)
-date_mapper.columns = ['dummy_date','date']
-
-#date_mapper.date
-
-X_new_dts = pd.merge(X_raw,
-         date_mapper, left_on = 'date', right_on = 'dummy_date', how = 'left')
-X_new_dts = X_new_dts.drop('date_x',axis=1).rename(columns = {'date_y':'date'})
-
-X_new_dts.to_csv('stock_data_actual_dates.csv')
-
-X_m = np.array(X)
-
-            #import pdb; pdb.set_trace()
-    #############
-X_new_dts['size'] = np.log(X_new_dts['mktcap'])
-
 ###########################
 # START HERE - Sunday 4-8-2019
 ###########################
@@ -93,10 +32,17 @@ model.calculate_FMPs()
 dt = '2015-12-31'
 model.all_FMPs[dt]
 model.all_FMPs_using_V[dt]
+#############
+# save down factor and spec returns!
 
-###############
+_factor_portfolios = model.factor_portfolios.copy()
+_factor_portfolio_returns = model.factor_returns.copy()
+_all_factor_exposures = model.all_factor_exposures.copy()
+_specific_returns = model.specific_returns.copy()
 
+model.all_specific_variances[dt]
 
+##############
 cov_to_corr(model.all_stock_covariance_mat[dt])
 
 
@@ -107,13 +53,16 @@ model.all_specific_variances[dt].head()
 # using diagonal of V doesnt yield the same thing
 ############
 dt
+
 H_D = calculate_FMP(X = model.all_factor_exposures[dt],
               D = model.all_specific_variances[dt])
 
 H_V = calculate_FMP(X = model.all_factor_exposures[dt],
               D = model.all_stock_covariance_mat[dt])
 
-H_V - H_D
+assert np.abs((H_V - H_D).sum().sum()) < 0.000001
+
+
 
 Id = pd.DataFrame(np.identity(model.all_specific_variances[dt].shape[0]),
              index = D.index, columns = D.columns)
@@ -361,14 +310,6 @@ factor_exp.S.dot(factor_exp.port_factor_exposure)
 
 factor_exp.factor_vol
 
-
-#############
-# save down factor and spec returns!
-
-_factor_portfolios = model.factor_portfolios.copy()
-_factor_portfolio_returns = model.factor_returns.copy()
-#model.factor_wealth.iloc[:,:6].plot()
-_specific_returns = model.specific_returns.copy()
 
 ##############
 
@@ -724,6 +665,69 @@ norm.ppf(rnks )
 norm.ppf([0.01,0.05, 0.50,0.95,.99])
 
 ##################################
+
+
+from scipy.stats import mstats
+
+from ols_functions import (replace_with_dummies, zscore_but_ignore_binary_cols, \
+    variance_inflation_factors, normalize)
+
+
+X_raw = pd.read_csv('stock_data_renamed.csv')
+
+
+X_raw.groupby('date').count()
+
+#what to do with:
+# missing returns? sector / mktcap ?
+
+X_nona = X_raw.dropna()
+
+X_nona.groupby('date').count()
+
+X_nona['ln_mktcap'] = np.log(X_nona['mktcap'])
+
+X_nona['mktcap'].hist(bins=100)
+
+X_with_dummies = replace_with_dummies(df = X_nona, categorical_cols = 'sector',
+                         leave_one_out=False)
+
+cols_for_X = [x for x in X_with_dummies.columns if x not in ['returns','fwd_returns','mktcap']]
+
+X = X_with_dummies.loc[:,cols_for_X ]
+
+
+###############
+# factor model object
+##################
+
+dts = pd.date_range(start='2005-12-31', end='2015-12-31', freq = 'BM')
+
+X_raw = X_raw.reset_index()
+
+{'D' + }
+
+nums = [x for x in np.arange(0,120)]
+
+dummy_dates = 'D'+pd.Series(nums ).astype(str).str.zfill(3)
+
+date_mapper = pd.concat([dummy_dates, pd.Series(dts)],axis=1)
+date_mapper.columns = ['dummy_date','date']
+
+#date_mapper.date
+
+X_new_dts = pd.merge(X_raw,
+         date_mapper, left_on = 'date', right_on = 'dummy_date', how = 'left')
+X_new_dts = X_new_dts.drop('date_x',axis=1).rename(columns = {'date_y':'date'})
+
+X_new_dts.to_csv('stock_data_actual_dates.csv')
+
+X_m = np.array(X)
+
+            #import pdb; pdb.set_trace()
+    #############
+X_new_dts['size'] = np.log(X_new_dts['mktcap'])
+
 
 
 def random_df():
